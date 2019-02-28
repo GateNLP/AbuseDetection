@@ -5,11 +5,12 @@ import math
 import random
 
 class Torch_Mini_Batch(object):
-    def __init__(self, inputReader, gensimDict, batch_size=32, sentence_length=50, pad_last_batch=False):
+    def __init__(self, inputReader, gensimDict, batch_size=45, sentence_length=50, pad_last_batch=False, unknown_word_index=1):
         self.inputReader = inputReader
         self.batch_size = batch_size
         self.gensimDict = gensimDict
         self.pad_last_batch = pad_last_batch
+        self.unknown_word_index = unknown_word_index
         self.sentence_length = sentence_length
         self.num_batch = self._get_num_batch()
         self.reserved_sample = [] # list of reserved sample to fill last batch 
@@ -35,7 +36,7 @@ class Torch_Mini_Batch(object):
             while(len(current_x) < self.batch_size):
                 try:
                     raw_x, raw_y = next(self.inputReader)
-                    doc_idx = self.gensimDict.doc2idx(raw_x)
+                    doc_idx = self.gensimDict.doc2idx(raw_x, unknown_word_index=self.unknown_word_index)
                     if len(self.reserved_sample) < self.batch_size:
                         self.reserved_sample.append([doc_idx, raw_y])
                     else:

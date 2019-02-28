@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 class ModelUlti(object):
-    def __init__(self, torchModel):
+    def __init__(self, torchModel=None):
         self.torchModel = torchModel
 
     def train_batch(self, batchIter, num_epohs=10):
@@ -34,7 +34,9 @@ class ModelUlti(object):
         all_prediction = torch.tensor([], dtype=torch.long)
         all_true_label = torch.tensor([], dtype=torch.long)
         for x, true_label in batchIter:
+            #print(x)
             current_batch_out = torch.sigmoid(self.torchModel(x))
+            #print(current_batch_out)
             label_prediction = torch.max(current_batch_out, 1)[1]
             all_prediction = torch.cat((all_prediction, label_prediction))
             all_true_label = torch.cat((all_true_label, true_label))
@@ -77,7 +79,23 @@ class ModelUlti(object):
         f_measure = 2*((precision*recall)/(precision+recall))
         print(f_measure)
 
-
-
         
+    def saveModel(self, save_path):
+        torch.save(self.torchModel, save_path)
+
+
+    def loadModel(self, load_path):
+        self.torchModel = torch.load(load_path)
+        self.torchModel.eval()
+
+
+
+
+
+
+
+
+
+
+
 
