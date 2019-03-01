@@ -41,7 +41,7 @@ class Torch_Mini_Batch(object):
                         self.reserved_sample.append([doc_idx, raw_y])
                     else:
                         r = random.random()
-                        if r > 0.5:
+                        if r > 0.5 and raw_y==1.0:
                             self.reserved_sample.pop()
                             self.reserved_sample.append([doc_idx, raw_y])
                 except StopIteration:

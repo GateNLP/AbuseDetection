@@ -11,6 +11,7 @@ class ModelUlti(object):
         self.torchModel = torchModel
 
     def train_batch(self, batchIter, num_epohs=10):
+        self.torchModel.train() 
         optimizer = optim.Adam(self.torchModel.parameters(), lr=0.01)
         criterion = nn.CrossEntropyLoss()
         for epoh in range(num_epohs):
@@ -32,6 +33,7 @@ class ModelUlti(object):
                 loss_value = loss.data.item()
                 all_loss.append(loss_value)
             print(sum(all_loss)/len(all_loss))
+        self.torchModel.eval()
 
     def prediction(self, batchIter):
         all_prediction_score = torch.tensor([], dtype=torch.float)
@@ -68,7 +70,7 @@ class ModelUlti(object):
                 output_dict['f-measure']['class '+str(class_id)] = f_measure_score
         if output_roc_score:
             roc_score = self.roc_auc(all_prediction_score.detach().numpy(), true_label.detach().numpy())
-            output_dict['roc'] = roc_score
+            output_dict['roc-auc'] = roc_score
         output_dict['accuracy'] = accuracy
         return output_dict
 
