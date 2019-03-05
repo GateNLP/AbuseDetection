@@ -12,17 +12,17 @@ Class 1: 11
 ### Kaggle corpora
 "Key" set contains "Text" annotations with "insult" feature containing 1 or 0.
 
-gate-train (this also appears in SVN as "gold-standard-abusive-tweets"--don't use that as JPs version is cleaned)
+**gate-train** (this also appears in SVN as "gold-standard-abusive-tweets"--don't use that as JPs version is cleaned)
 
 Class 0: 2898  
 Class 1: 1049  
 
-gate-test_with_solutions (this also appears in SVN as "gold-standard-abusive-tweets-2"--don't use that as JPs version is cleaned)
+**gate-test_with_solutions** (this also appears in SVN as "gold-standard-abusive-tweets-2"--don't use that as JPs version is cleaned)
 
 Class 0: 1954  
 Class 1: 693
 
-gate-impermium_verification_labels
+**gate-impermium_verification_labels**
 
 Class 0: 1158  
 Class 1: 1077
