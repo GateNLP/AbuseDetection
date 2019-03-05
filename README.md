@@ -44,6 +44,7 @@ F1: 0.51
 
 ### Learning Framework
 Trained on gate-train, Tested on gate-test_with_solutions
-Accuracy	0.8058	
+
+Accuracy:	0.8058
 Cohen’s Kappa: 0.4566
 
