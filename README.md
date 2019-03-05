@@ -31,7 +31,17 @@ Class 1: 1077
 
 ## Evaluation
 
-Existing gazetteer-based abuse classification performance is 0.78 (Cohen’s Kappa: 0.37), with a precision of 0.61, a recall of 0.44 and an F1 0.51 on the Kaggle data. From [ICWSM paper](https://www.aaai.org/ocs/index.php/ICWSM/ICWSM18/paper/viewFile/17861/17060). Though note that the gazetteer approach wasn't constructed from the Kaggle data, which is more US English.
+### Gazetteer
 
+[ICWSM paper](https://www.aaai.org/ocs/index.php/ICWSM/ICWSM18/paper/viewFile/17861/17060)  
+Trained on "gold-standard-abusive-tweets" and tested on "gold-standard-abusive-tweets-2":
+
+Accuracy: 0.78   
+Cohen’s Kappa: 0.37  
+Precision: 0.61  
+Recall: 0.44  
+F1: 0.51
+
+### Learning Framework
 
 Intergrated Learning framework blstmcnn model have 0.8446969696969697 accuracy on 5% hold out validation
