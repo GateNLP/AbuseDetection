@@ -6,22 +6,25 @@
 
 500 documents, one tweet per doc, partially annotated. "Text" annotations with "Abuse" feature containing "1" or "0" (text).
 
-Class 0: 343
-Class 1: 11
+Class 0: 343  
+Class 1: 11  
 
 ### Kaggle corpora
 "Key" set contains "Text" annotations with "insult" feature containing 1 or 0.
 
 gate-train
-Class 0: 2898
-Class 1: 1049
+
+Class 0: 2898  
+Class 1: 1049  
 
 gate-test_with_solutions
-Class 0: 1954
+
+Class 0: 1954  
 Class 1: 693
 
 gate-impermium_verification_labels
-Class 0: 1158
+
+Class 0: 1158  
 Class 1: 1077
 
 
