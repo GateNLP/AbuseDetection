@@ -43,5 +43,7 @@ Recall: 0.44
 F1: 0.51
 
 ### Learning Framework
+Trained on gate-train, Tested on 
+Accuracy	0.8058	
+Cohen’s Kappa: 0.4566
 
-Intergrated Learning framework blstmcnn model have 0.8446969696969697 accuracy on 5% hold out validation
