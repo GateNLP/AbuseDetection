@@ -1,0 +1,214 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gatelfpytorchjson.modelwrapper &#8212; GATE LF Pytorch Wrapper (gatelfpytorch)  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GATE LF Pytorch Wrapper (gatelfpytorch)  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gatelfpytorchjson.modelwrapper</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">streamhandler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+<span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
+                <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(name)-12s</span><span class="s1"> </span><span class="si">%(levelname)-8s</span><span class="s1"> </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">streamhandler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">streamhandler</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ModelWrapper"><a class="viewcode-back" href="../../gatelfpytorchjson.modelwrapper.html#gatelfpytorchjson.modelwrapper.ModelWrapper">[docs]</a><span class="k">class</span> <span class="nc">ModelWrapper</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Common base class for all wrappers. Defines instance methods which are the same</span>
+<span class="sd">    for all subclasses plus common static utility methods.&quot;&quot;&quot;</span>
+
+    <span class="c1"># This has been defined so that subclasses can call the superclass init function</span>
+    <span class="c1"># with parameter config. This does nothing yet, but could do some common initialization</span>
+    <span class="c1"># processing in the future.</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="ModelWrapper.load"><a class="viewcode-back" href="../../gatelfpytorchjson.modelwrapper.html#gatelfpytorchjson.modelwrapper.ModelWrapper.load">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filenameprefix</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load a saved wrapper instance and return it. The file name is made of the</span>
+<span class="sd">        filenameprefix with &#39;.wrapper.pickle&#39; appended.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filenameprefix</span><span class="o">+</span><span class="s2">&quot;.wrapper.pickle&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">inf</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Restored instance keys=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">(),))</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="s1">&#39;metafile&#39;</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">init_after_load</span><span class="p">(</span><span class="n">filenameprefix</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">w</span></div>
+
+    <span class="c1"># Useful utility methods below this line</span>
+
+<div class="viewcode-block" id="ModelWrapper.early_stopping_checker"><a class="viewcode-back" href="../../gatelfpytorchjson.modelwrapper.html#gatelfpytorchjson.modelwrapper.ModelWrapper.early_stopping_checker">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">early_stopping_checker</span><span class="p">(</span><span class="n">losses</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">accs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">mindelta</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Takes two lists of numbers, representing the losses and/or accuracies of all validation</span>
+<span class="sd">        steps.</span>
+<span class="sd">        If accs is not None, it is used, otherwise losses is used if not None, otherwise always</span>
+<span class="sd">        returns False (do not stop).</span>
+<span class="sd">        If accuracies are used, at most patience number of the last validation accuracies can</span>
+<span class="sd">        NOT be at least mindelta larger than the best one so far.</span>
+<span class="sd">        If losses are used, at most patience number of last validation losses can NOT be</span>
+<span class="sd">        at least mindelta smaller then the best one so far.</span>
+<span class="sd">        In other words this stops if more that patience of the last metrics are not an improvement</span>
+<span class="sd">        of at least mindelta over the current best.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">accs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">accs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">losses</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">losses</span><span class="p">]</span>   <span class="c1"># so we can always check for increase</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">patience</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">best</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9e99</span>
+        <span class="n">bestidx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># find the index of the best value:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">best</span><span class="o">+</span><span class="n">mindelta</span><span class="p">):</span>
+                <span class="n">bestidx</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">best</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">curidx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="n">curidx</span><span class="o">-</span><span class="n">bestidx</span> <span class="o">&gt;</span> <span class="n">patience</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="ModelWrapper.makeless"><a class="viewcode-back" href="../../gatelfpytorchjson.modelwrapper.html#gatelfpytorchjson.modelwrapper.ModelWrapper.makeless">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">makeless</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">,</span> <span class="n">preshift</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">postshift</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">p1</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Function to return logarithmic or inverse polynomial values for such tasks</span>
+<span class="sd">        as calculating number of dimensions from vocabulary size.&quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">func</span><span class="p">((</span><span class="n">n</span><span class="o">+</span><span class="n">preshift</span><span class="p">),</span> <span class="n">p1</span><span class="p">)</span><span class="o">+</span><span class="n">postshift</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span></div>
+
+<div class="viewcode-block" id="ModelWrapper.accuracy"><a class="viewcode-back" href="../../gatelfpytorchjson.modelwrapper.html#gatelfpytorchjson.modelwrapper.ModelWrapper.accuracy">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">accuracy</span><span class="p">(</span><span class="n">batch_predictions</span><span class="p">,</span> <span class="n">batch_targets</span><span class="p">,</span> <span class="n">pad_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the accuracy from a tensor with predictions, which contains scores for each</span>
+<span class="sd">        class in the last dimension (higher scores are better) and a tensor with target indices.</span>
+<span class="sd">        Tensor elements where the target has the padding index are ignored.</span>
+<span class="sd">        If the tensors represent sequences the shape of the predictions is batchsize, maxseqlen, nclasses</span>
+<span class="sd">        and of the targets is batchsize, maxseqlen, otherwise the predictions have shape</span>
+<span class="sd">        batchsize, nclasses, targets have shape batchsize</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># n_pred_dims = len(batch_predictions.size())  # this should be 3 for sequences, otherwise 2</span>
+        <span class="n">pred_size</span> <span class="o">=</span> <span class="n">batch_predictions</span><span class="o">.</span><span class="n">size</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># the size of the predictions dimension = nclasses</span>
+
+        <span class="c1"># first reshape so that we have the prediction scores in the last/second dimension</span>
+        <span class="c1"># then find the argmax index along the last/second dimension (dimension=1)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">out_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">batch_predictions</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">pred_size</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+
+
+        <span class="c1"># TODO: it may be more efficient to calculate the accuracy differently for sequences and for</span>
+        <span class="c1"># classification and avoid using numpy here</span>
+        <span class="c1"># Instead we could use, just with torch tensors:</span>
+        <span class="c1"># mask = (targets != -1)</span>
+        <span class="c1"># same = (targets == predictions)</span>
+        <span class="c1"># vals = torch.masked_select(same, mask)</span>
+        <span class="c1"># total = vals.size()[0]</span>
+        <span class="c1"># correct = vals.sum()</span>
+
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">batch_targets</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;targets reshaped: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">targets</span><span class="p">,))</span>
+        <span class="n">pred_idxs</span> <span class="o">=</span> <span class="n">out_idxs</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;pred_idxs reshaped: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pred_idxs</span><span class="p">,))</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">targets</span> <span class="o">!=</span> <span class="n">pad_index</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;mask reshaped: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">mask</span><span class="p">,))</span>
+        <span class="n">n_correct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pred_idxs</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">==</span> <span class="n">targets</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+        <span class="n">n_total</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">n_correct</span> <span class="o">/</span> <span class="n">n_total</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Total=</span><span class="si">%s</span><span class="s2">, correct=</span><span class="si">%s</span><span class="s2">, acc=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">n_correct</span><span class="p">,</span> <span class="n">acc</span><span class="p">,))</span>
+        <span class="c1"># import ipdb</span>
+        <span class="c1"># ipdb.set_trace()</span>
+        <span class="k">return</span> <span class="n">acc</span><span class="p">,</span> <span class="n">n_correct</span><span class="p">,</span> <span class="n">n_total</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GATE LF Pytorch Wrapper (gatelfpytorch)  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, University of Sheffield.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>
