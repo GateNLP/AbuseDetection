@@ -1,4 +1,5 @@
 from gatelfpytorchjson import CustomModule
+from gatelfpytorchjson import EmbeddingsModule
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,19 +16,21 @@ logger.addHandler(streamhandler)
 
 
 
-class BlstmCNNModel(CustomModule):
-    def __init__(self, dataset, config={}, maxSentLen=100, embedding_dim=128, kernel_dim=64, lstm_dim=64, dropout=0.2, bn_momentum=0.2):
+class TextClassBiLstmCnnSingle(CustomModule):
+    def __init__(self, dataset, config={}, maxSentLen=100, kernel_dim=128, lstm_dim=64, dropout=0.2, bn_momentum=0.2):
         super().__init__(config=config)
-        #super(BlstmCNNModel, self).__init__()
+        #super(TextClassBiLstmCnnSingle, self).__init__()
         self.maxSentLen=maxSentLen
         self.n_classes = dataset.get_info()["nClasses"]
 
         feature = dataset.get_indexlist_features()[0]
-        vocab_size = feature.vocab.n
+        vocab = feature.vocab
+        vocab_size = vocab.n
         logger.debug("Initializing module TextClassCNNsingle for classes: %s and vocab %s" %
                      (self.n_classes, vocab_size, ))   
 
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+        self.embedding = EmbeddingsModule(vocab)
+        embedding_dim = self.embedding.emb_dims
         self.lstm1 = nn.LSTM(embedding_dim, lstm_dim, batch_first=True, bidirectional=True)
 
         self.conv2 = nn.Conv2d(1, kernel_dim, (2,lstm_dim*2))
@@ -52,6 +55,28 @@ class BlstmCNNModel(CustomModule):
         self.dropout = nn.Dropout(dropout)
         self.logsoftmax = torch.nn.LogSoftmax(dim=1)
 
+        self.relu = nn.ReLU(inplace=True)
+        self.residual_1 = nn.Linear(embedding_dim, lstm_dim*2)
+        self.residual_2 = nn.Linear(maxSentLen, maxSentLen-1)
+        self.residual_3 = nn.Linear(maxSentLen, maxSentLen-2)
+        self.residual_4 = nn.Linear(maxSentLen, maxSentLen-3)
+        self.residual_5 = nn.Linear(maxSentLen, maxSentLen-4)
+        self.residual_6 = nn.Linear(maxSentLen, maxSentLen-5)
+
+        self.residual_pool_2 = nn.Linear(maxSentLen-1, 1)
+        self.residual_pool_3 = nn.Linear(maxSentLen-2, 1)
+        self.residual_pool_4 = nn.Linear(maxSentLen-3, 1)
+        self.residual_pool_5 = nn.Linear(maxSentLen-4, 1)
+        self.residual_pool_6 = nn.Linear(maxSentLen-5, 1)
+
+
+        #self.residual_pool_2 = nn.Linear(maxSentLen, 1)
+        #self.residual_pool_3 = nn.Linear(maxSentLen, 1)
+        #self.residual_pool_4 = nn.Linear(maxSentLen, 1)
+        #self.residual_pool_5 = nn.Linear(maxSentLen, 1)
+        #self.residual_pool_6 = nn.Linear(maxSentLen, 1)
+
+
     def forward(self, batch):
         #print("checking shapes")
         #print(x.shape) # [batch size, sentence length]
@@ -67,38 +92,101 @@ class BlstmCNNModel(CustomModule):
 
 
         if self.on_cuda():
-            batch = batch.type(torch.cuda.LongTensor)
+            #batch = batch.type(torch.cuda.LongTensor)
             batch.cuda()
         #batchsize = batch.size()[0]    
 
         #logger.info(batch)
         embedded = self.embedding(batch)
+        #residual_1 = self.relu(embedded)
+        residual_1 = embedded
+
+        residual_1 = self.residual_1(residual_1)
+        #residual_1 = F.leaky_relu(residual_1)
+        #print(residual_1.shape)
         #print(embedded.shape)
         #print(x.shape) # [batch size, sentence length, embedding dim]
         lstmed, hidden = self.lstm1(embedded)
+        lstmed = lstmed + residual_1
+        #lstmed = F.leaky_relu(lstmed)
+        residual_lstm = lstmed.transpose(1,2)
+        
         #print(lstmed.shape)
+        #print(residual_lstm.shape)
         lstmed = lstmed.unsqueeze(1) # add 1 channel to cnn
+    
         #print(lstmed.shape)
         #print(x.shape) # [batch size, channle, sentence length, embedding dim]
         conved_2 = F.relu(self.conv2(lstmed)).squeeze(3) # conv over embedding size, left 1 in last
         conved_2 = self.conv2_bn(conved_2)
+
         conved_3 = F.relu(self.conv3(lstmed)).squeeze(3)
         conved_3 = self.conv3_bn(conved_3)
+
         conved_4 = F.relu(self.conv4(lstmed)).squeeze(3) 
         conved_4 = self.conv4_bn(conved_4)
+
         conved_5 = F.relu(self.conv5(lstmed)).squeeze(3)
         conved_5 = self.conv5_bn(conved_5)
+
         conved_6 = F.relu(self.conv6(lstmed)).squeeze(3)
         conved_6 = self.conv6_bn(conved_6)
+
+
+        residual_2 = self.residual_2(residual_lstm)
+        conved_2 = conved_2 + residual_2
+        residual_conv2 = conved_2
+        residual_3 = self.residual_3(residual_lstm)
+        conved_3 = conved_3 + residual_3
+        residual_conv3 = conved_3
+        residual_4 = self.residual_4(residual_lstm)
+        conved_4 = conved_4 + residual_4
+        residual_conv4 = conved_4
+        residual_5 = self.residual_5(residual_lstm)
+        conved_5 = conved_5 + residual_5
+        residual_conv5 = conved_5
+        residual_6 = self.residual_6(residual_lstm)
+        conved_6 = conved_6 + residual_6
+        residual_conv6 = conved_6
+
+
 
         pooled_2 = F.max_pool1d(conved_2, conved_2.shape[2]).squeeze(2)
         pooled_3 = F.max_pool1d(conved_3, conved_3.shape[2]).squeeze(2)
         pooled_4 = F.max_pool1d(conved_4, conved_4.shape[2]).squeeze(2)
         pooled_5 = F.max_pool1d(conved_5, conved_5.shape[2]).squeeze(2)
         pooled_6 = F.max_pool1d(conved_6, conved_6.shape[2]).squeeze(2)
+        #print(pooled_2.shape)
+
+        residual_pool_2 = self.residual_pool_2(residual_conv2).squeeze(2)
+        #print(residual_pool_2.shape)
+        pooled_2 = pooled_2 + residual_pool_2
+        residual_pool_2_after = pooled_2
+
+        residual_pool_3 = self.residual_pool_3(residual_conv3).squeeze(2)
+        pooled_3 = pooled_3 + residual_pool_3
+        residual_pool_3_after = pooled_3
+
+        residual_pool_4 = self.residual_pool_4(residual_conv4).squeeze(2)
+        pooled_4 = pooled_4 + residual_pool_4
+        residual_pool_4_after = pooled_4
+
+        residual_pool_5 = self.residual_pool_5(residual_conv5).squeeze(2)
+        pooled_5 = pooled_5 + residual_pool_5
+        residual_pool_2_after = pooled_2
+
+        residual_pool_6 = self.residual_pool_6(residual_conv6).squeeze(2)
+        pooled_6 = pooled_6 + residual_pool_6
+        residual_pool_6_after = pooled_6
+
+
+
+
+
 
         concat = torch.cat((pooled_2, pooled_3, pooled_4, pooled_5, pooled_6), dim=1)
         concat = self.dropout(concat)
+        #print(concat.shape)
         hidden1 = F.leaky_relu(self.fc_hidden1(concat) )
         #hidden1 = torch.sigmoid(self.fc_hidden1(concat))
         out = self.fc(hidden1)
@@ -116,4 +204,20 @@ class BlstmCNNModel(CustomModule):
         # optimizer = torch.optim.SGD(parms, lr=0.01, momentum=0.9, weight_decay=0.05)
         optimizer = torch.optim.Adam(parms, lr=0.015, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
         return optimizer
+
+
+
+class ResidualLSTMUnit(nn.Module):
+    def __init__(self, embedding_dim, lstm_dim):
+        super(ResidualLSTMUnit,self).__init__()
+        self.lstm1 = nn.LSTM(embedding_dim, lstm_dim, batch_first=True, bidirectional=True)
+
+
+    def forward(self, x):
+        pass
+       
+
+
+
+
 
