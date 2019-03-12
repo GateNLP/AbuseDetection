@@ -70,7 +70,6 @@ class TextClassBiLstmCnnSingle(CustomModule):
 
 
         if self.on_cuda():
-            batch = batch.type(torch.cuda.LongTensor)
             batch.cuda()
         #batchsize = batch.size()[0]    
 
