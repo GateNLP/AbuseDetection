@@ -16,7 +16,7 @@ logger.addHandler(streamhandler)
 
 
 
-class TextClassBiLstmCnnSingle(CustomModule):
+class TextClassResiduleBiLstmCnnSingle(CustomModule):
     def __init__(self, dataset, config={}, maxSentLen=100, kernel_dim=128, lstm_dim=64, dropout=0.2, bn_momentum=0.2):
         super().__init__(config=config)
         #super(TextClassBiLstmCnnSingle, self).__init__()
