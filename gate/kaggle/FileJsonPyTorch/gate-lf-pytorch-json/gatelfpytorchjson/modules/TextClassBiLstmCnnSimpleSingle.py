@@ -17,11 +17,12 @@ logger.addHandler(streamhandler)
 
 
 class TextClassBiLstmCnnSimpleSingle(CustomModule):
-    def __init__(self, dataset, config={}, maxSentLen=500, kernel_dim=100, lstm_dim=64, dropout=0.2, bn_momentum=0.2):
+    def __init__(self, dataset, config={}, maxSentLen=500, kernel_size =[3,4,5], cnn_dim=64, lstm_dim=128, dropout=0.6, bn_momentum=0.1):
         super().__init__(config=config)
         #super(TextClassBiLstmCnnSingle, self).__init__()
         self.maxSentLen=maxSentLen
         self.n_classes = dataset.get_info()["nClasses"]
+        self.kernel_size = kernel_size
 
         feature = dataset.get_indexlist_features()[0]
         vocab = feature.vocab
@@ -31,67 +32,70 @@ class TextClassBiLstmCnnSimpleSingle(CustomModule):
 
         self.embedding = EmbeddingsModule(vocab)
         embedding_dim = self.embedding.emb_dims
-        self.lstm1 = nn.LSTM(embedding_dim, lstm_dim, batch_first=True, bidirectional=True)
+        self.lstm1 = nn.LSTM(embedding_dim, lstm_dim, batch_first=True, bidirectional=True, dropout=dropout)
 
-        self.conv3 = nn.Conv2d(1, kernel_dim, (3,lstm_dim*2))
-        self.conv3_bn = nn.BatchNorm1d(kernel_dim, momentum=bn_momentum)
+        self.cnn_layers = torch.nn.ModuleDict()
+        self.cnn_layers_names = []
+        self.cnn_bn = torch.nn.ModuleDict()
+        self.cnn_bn_names= []
 
-        self.conv4 = nn.Conv2d(1, kernel_dim, (4,lstm_dim*2))
-        self.conv4_bn = nn.BatchNorm1d(kernel_dim, momentum=bn_momentum)
+        for K in kernel_size:
+            cnn_layername = "cnn_K{}".format(K)
+            current_cnn_layer = torch.nn.Conv1d(in_channels=lstm_dim*2, 
+                                                out_channels=cnn_dim, 
+                                                kernel_size=K, 
+                                                padding=int(K/2))
+            cnn_bn_layername = "bn_K{}".format(K)
+            current_bn = nn.BatchNorm1d(cnn_dim, momentum=bn_momentum)
 
-        self.conv5 = nn.Conv2d(1, kernel_dim, (5,lstm_dim*2))
-        self.conv5_bn = nn.BatchNorm1d(kernel_dim, momentum=bn_momentum)
+            self.cnn_layers.add_module(cnn_layername, current_cnn_layer)
+            self.cnn_bn.add_module(cnn_bn_layername, current_bn)
+            self.cnn_layers_names.append(cnn_layername)
+            self.cnn_bn_names.append(cnn_bn_layername)
 
-        self.fc_hidden1 = nn.Linear(kernel_dim*3, 16)
+        #self.fc_hidden1 = nn.Linear(kernel_dim*3, 16)
 
-        #self.fc = nn.Linear(kernel_dim*3,output_size)
-        self.fc = nn.Linear(16,self.n_classes)
+        self.fc = nn.Linear(cnn_dim*len(kernel_size),self.n_classes)
         self.dropout = nn.Dropout(dropout)
         self.logsoftmax = torch.nn.LogSoftmax(dim=1)
 
+
+
     def forward(self, batch):
-        #print("checking shapes")
-        #print(x.shape) # [batch size, sentence length]
         batch = torch.LongTensor(batch[0])
         sent_len = batch.shape[1]
         batchsize = batch.shape[0] 
-
-        if sent_len > self.maxSentLen:
-            batch = batch[:,:self.maxSentLen]
-        elif sent_len < self.maxSentLen:
-            zero_pad = torch.zeros(batchsize, self.maxSentLen-sent_len, dtype=torch.long)
-            batch = torch.cat((batch, zero_pad),dim=1)
-
+        if self.maxSentLen:
+            if sent_len > self.maxSentLen:
+                batch = batch[:,:self.maxSentLen]
+            elif sent_len < self.maxSentLen:
+                zero_pad = torch.zeros(batchsize, self.maxSentLen-sent_len, dtype=torch.long)
+                batch = torch.cat((batch, zero_pad),dim=1)
 
         if self.on_cuda():
             batch.cuda()
-        #batchsize = batch.size()[0]    
+            for modules in self.cnn_layers:
+                self.cnn_layers[modules].cuda()
+            for modules in self.cnn_bn:
+                self.cnn_bn[modules].cuda()
+            self.lstm1.cuda()
 
-        #logger.info(batch)
         embedded = self.embedding(batch)
-        #print(embedded.shape)
-        #print(x.shape) # [batch size, sentence length, embedding dim]
         lstmed, hidden = self.lstm1(embedded)
-        #print(lstmed.shape)
-        lstmed = lstmed.unsqueeze(1) # add 1 channel to cnn
-        #print(lstmed.shape)
-        #print(x.shape) # [batch size, channle, sentence length, embedding dim]
-        conved_3 = F.relu(self.conv3(lstmed)).squeeze(3)
-        conved_3 = self.conv3_bn(conved_3)
-        conved_4 = F.relu(self.conv4(lstmed)).squeeze(3) 
-        conved_4 = self.conv4_bn(conved_4)
-        conved_5 = F.relu(self.conv5(lstmed)).squeeze(3)
-        conved_5 = self.conv5_bn(conved_5)
+    
+        convd = []
+        lstmed = lstmed.transpose(1,2)
+        for i in range (len(self.cnn_layers_names)):
+            current_cnn_layer_name = self.cnn_layers_names[i]
+            current_cnn_bn_layer_name = self.cnn_bn_names[i]
+            current_conved = F.relu(self.cnn_layers[current_cnn_layer_name](lstmed))
+            current_conved = self.cnn_bn[current_cnn_bn_layer_name](current_conved)
+            current_conved = F.max_pool1d(current_conved, current_conved.shape[2]).squeeze(2)
+            convd.append(current_conved)
 
-        pooled_3 = F.max_pool1d(conved_3, conved_3.shape[2]).squeeze(2)
-        pooled_4 = F.max_pool1d(conved_4, conved_4.shape[2]).squeeze(2)
-        pooled_5 = F.max_pool1d(conved_5, conved_5.shape[2]).squeeze(2)
-
-        concat = torch.cat((pooled_3, pooled_4, pooled_5), dim=1)
+        concat = torch.cat(convd, dim=1)
         concat = self.dropout(concat)
-        hidden1 = F.leaky_relu(self.fc_hidden1(concat) )
-        #hidden1 = torch.sigmoid(self.fc_hidden1(concat))
-        out = self.fc(hidden1)
+        out = self.fc(concat)
         out = self.logsoftmax(out)
         return out
 

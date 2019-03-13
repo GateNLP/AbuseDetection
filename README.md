@@ -48,3 +48,12 @@ Trained on gate-train, Tested on gate-test_with_solutions
 Accuracy:	0.8058
 Cohen’s Kappa: 0.4566
 
+Five run BLSTMCNN without Shortcut
+Accuracy: 80.614
+
+Five run BLSTMCNN with Shortcut(residual) average accuracy:
+Accuracy: 81.014
+
+
+Five run valila CNN with glove 100 dim twitter embed
+Accuracy: 82.51
