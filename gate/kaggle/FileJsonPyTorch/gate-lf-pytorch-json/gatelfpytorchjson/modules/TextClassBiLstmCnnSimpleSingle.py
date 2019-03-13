@@ -17,7 +17,7 @@ logger.addHandler(streamhandler)
 
 
 class TextClassBiLstmCnnSimpleSingle(CustomModule):
-    def __init__(self, dataset, config={}, maxSentLen=300, kernel_dim=100, lstm_dim=64, dropout=0.2, bn_momentum=0.2):
+    def __init__(self, dataset, config={}, maxSentLen=500, kernel_dim=100, lstm_dim=64, dropout=0.2, bn_momentum=0.2):
         super().__init__(config=config)
         #super(TextClassBiLstmCnnSingle, self).__init__()
         self.maxSentLen=maxSentLen
