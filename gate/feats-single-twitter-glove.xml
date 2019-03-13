@@ -6,10 +6,10 @@
 <FEATURE>string</FEATURE>
 <EMBEDDINGS>
   <ID>tokenstring</ID>
-  <TRAIN>yes</TRAIN>
+  <TRAIN>no</TRAIN>
   <DIMS>100</DIMS>
   <MINFREQ>3</MINFREQ>
-  <FILE>embs/glove6b.txt.gz</FILE>
+  <FILE>embd/glove.twitter.27B.100d.txt</FILE>
 </EMBEDDINGS>
 </NGRAM>
 </LF>

@@ -205,6 +205,10 @@
                   <string>mlTmp</string>
                 </entry>
                 <entry>
+                  <string>inputASName</string>
+                  <string>Key</string>
+                </entry>
+                <entry>
                   <string>annotationTypes</string>
                   <gate.util.persistence.CollectionPersistence>
                     <localList>
@@ -212,10 +216,6 @@
                     </localList>
                     <collectionType>java.util.ArrayList</collectionType>
                   </gate.util.persistence.CollectionPersistence>
-                </entry>
-                <entry>
-                  <string>inputASName</string>
-                  <string>Key</string>
                 </entry>
               </localMap>
             </runtimeParams>
@@ -252,6 +252,10 @@
                   <string>mlTmp</string>
                 </entry>
                 <entry>
+                  <string>inputASName</string>
+                  <string></string>
+                </entry>
+                <entry>
                   <string>annotationTypes</string>
                   <gate.util.persistence.CollectionPersistence>
                     <localList>
@@ -259,10 +263,6 @@
                     </localList>
                     <collectionType>java.util.ArrayList</collectionType>
                   </gate.util.persistence.CollectionPersistence>
-                </entry>
-                <entry>
-                  <string>inputASName</string>
-                  <string></string>
                 </entry>
               </localMap>
             </runtimeParams>
@@ -337,7 +337,13 @@
                 </entry>
                 <entry>
                   <string>algorithmParameters</string>
-                  <string>--module BlstmCNNModel --es_metric accuracy --es_patience 5</string>
+                  <string>--module TextClassResiduleBiLstmCnnSingle --es_metric accuracy --es_patience 15</string>
+                </entry>
+                <entry>
+                  <string>featureSpecURL</string>
+                  <gate.util.persistence.PersistenceManager-URLHolder>
+                    <urlString>$relpath$feats-single-twitter-glove.xml</urlString>
+                  </gate.util.persistence.PersistenceManager-URLHolder>
                 </entry>
                 <entry>
                   <string>inputASName</string>
