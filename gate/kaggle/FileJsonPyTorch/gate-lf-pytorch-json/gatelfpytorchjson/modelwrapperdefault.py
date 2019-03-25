@@ -395,7 +395,7 @@ class ModelWrapperDefault(ModelWrapper):
             return
         if file is not None:
             # use the file for validation
-            self.dataset.split(convert=True, validation_file=file)
+            self.dataset.split(convert=True, keep_orig=True, validation_file=file)
         else:
             if validationsize is not None:
                 validationsize = float(validationsize)
@@ -409,7 +409,7 @@ class ModelWrapperDefault(ModelWrapper):
                     valpart = validationsize
             else:
                 valpart = 0.1
-            self.dataset.split(convert=True, validation_part=valpart, validation_size=valsize)
+            self.dataset.split(convert=True, keep_orig=True,  validation_part=valpart, validation_size=valsize)
         self.valset = self.dataset.validation_set_converted(as_batch=True)
         self.is_data_prepared = True
         # TODO if we have a validation set, calculate the class distribution here
