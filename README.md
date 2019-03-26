@@ -58,11 +58,15 @@ Accuracy: 81.014
 Five run valila CNN with glove 100 dim twitter embed
 Accuracy: 82.51
 
+```
+
 Elmo + CNN (see below for model)
 First run: Accuracy: 85.95, Cohen's Kappa: 62.92, Pi's Kapaa: 62.90
+Second run: Accuracy: 83.94, Cohen's Kappa: 50.84, Pi's Kapaa: 49.62
 
+```
 
-
+```
 ELMO + CNN Model:
 module=TextClassELMO_CNNsingle(
   (elmo): Elmo(
@@ -167,5 +171,6 @@ Parameter Group 0
     weight_decay: 0
 )
 lossfun=NLLLoss()
+```
 
 
