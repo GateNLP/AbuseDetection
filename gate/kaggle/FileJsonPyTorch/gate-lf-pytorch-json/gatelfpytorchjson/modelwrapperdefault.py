@@ -15,6 +15,7 @@ import pkgutil
 import timeit
 import logging
 import signal
+from allennlp.modules.elmo import batch_to_ids
 
 
 # Basic usage:
@@ -410,7 +411,11 @@ class ModelWrapperDefault(ModelWrapper):
             else:
                 valpart = 0.1
             self.dataset.split(convert=True, keep_orig=True,  validation_part=valpart, validation_size=valsize)
-        self.valset = self.dataset.validation_set_converted(as_batch=True)
+        if self.config['elmo']:
+            self.valset = self.dataset.validation_set_orig(as_batch=True)
+            print(len(self.valset))
+        else:
+            self.valset = self.dataset.validation_set_converted(as_batch=True)
         self.is_data_prepared = True
         # TODO if we have a validation set, calculate the class distribution here
         # this should be shown before training starts so the validation accuracy makes more sense
@@ -436,7 +441,7 @@ class ModelWrapperDefault(ModelWrapper):
         This may return additional data in the future or the format of what is returned may change.
         """
         batchsize = len(instancelist)
-        if not converted:
+        if (not converted) and (not self.config['elmo']):
             # TODO: check if and when to do instance normalization here!
             instancelist = [self.dataset.convert_indep(x) for x in instancelist]
             # logger.debug("apply: instances after conversion: %s" % (instancelist,))
@@ -516,6 +521,9 @@ class ModelWrapperDefault(ModelWrapper):
         elif not train_mode and curmodeistrain:
             self.module.eval()
 
+
+        if self.config['elmo']:
+            indeps = batch_to_ids(indeps[0])
         output = self.module(indeps)
         # logger.debug("Output of model is of size %s: %s" % (output.size(), output, ))
 
@@ -537,26 +545,35 @@ class ModelWrapperDefault(ModelWrapper):
         # NOTE!!! the targets are what we get minus 1, which shifts the padding index to be -1
         # TODO: IF we use padded targets, we need to subtract 1 here, otherwise we have to leave this
         # as is!!
-        targets = np.array(validationinstances[1])
+        if self.config['elmo']:
+            targets = list(map(int, validationinstances[1]))
+            targets = np.array(targets)
+        else:
+            targets = np.array(validationinstances[1])
         # v_deps = V(torch.LongTensor(targets), requires_grad=False)
         v_deps = torch.LongTensor(targets)
         if self._enable_cuda:
             v_deps = v_deps.cuda()
         v_preds = self._apply_model(validationinstances[0], train_mode=train_mode)
+
+
         # logger.debug("Got v_preds of size %s: %s" % (v_preds.size(), v_preds,))
         # logger.debug("Evaluating against targets of size %s: %s" % (v_deps.size(), v_deps))
         # TODO: not sure if and when to zero the grads for the loss function if we use it
         # in between training steps?
         # NOTE: the v_preds may or may not be sequences, if sequences we get the wrong shape here
         # so for now we simply put all the items (sequences and batch items) in the first dimension
-        valuedim = v_preds.size()[-1]
-        loss_function = self.lossfunction
-        v_preds_reshape = v_preds.view(-1, valuedim)
-        # !!DEBUG print("Predictions, reshaped, size=", v_preds_reshape.size(), "is", v_preds_reshape, file=sys.stderr)
-        v_deps_reshape = v_deps.view(-1)
-        # !!DEBUG print("Targets, reshaped, size=", v_deps_reshape.size(), "is", v_deps_reshape, file=sys.stderr)
-        loss = loss_function(v_preds_reshape, v_deps_reshape)
+        if train_mode:
+            valuedim = v_preds.size()[-1]
+            loss_function = self.lossfunction
+            v_preds_reshape = v_preds.view(-1, valuedim)
+            # !!DEBUG print("Predictions, reshaped, size=", v_preds_reshape.size(), "is", v_preds_reshape, file=sys.stderr)
+            v_deps_reshape = v_deps.view(-1)
+            # !!DEBUG print("Targets, reshaped, size=", v_deps_reshape.size(), "is", v_deps_reshape, file=sys.stderr)
+            loss = loss_function(v_preds_reshape, v_deps_reshape)
         # calculate the accuracy as well, since we know we have a classification problem
+        else:
+            loss = 0
         acc, correct, total = ModelWrapper.accuracy(v_preds, v_deps)
         # logger.debug("got loss %s accuracy %s" % (loss, acc, ))
         # print("loss=", loss, "preds=", v_preds, "targets=", v_deps, file=sys.stderr)
@@ -564,6 +581,7 @@ class ModelWrapperDefault(ModelWrapper):
         if not as_pytorch:
             loss = float(loss)
             acc = float(acc)
+        torch.cuda.empty_cache()
         return tuple((loss, acc, correct, total))
 
 
@@ -627,7 +645,11 @@ class ModelWrapperDefault(ModelWrapper):
             epoch_correct = 0
             epoch_total = 0
             epoch_loss = 0
-            for batch in self.dataset.batches_converted(train=True, batch_size=batch_size):
+            if self.config['elmo']:
+                batchGenerator = self.dataset.batches_original(train=True, batch_size=batch_size)
+            else:
+                batchGenerator = self.dataset.batches_converted(train=True, batch_size=batch_size)
+            for batch in batchGenerator:
                 batch_nr += 1
                 totalbatches += 1
                 nr_instances += batch_size  # we should use the actual batch size which could be less
@@ -661,7 +683,23 @@ class ModelWrapperDefault(ModelWrapper):
                         (self.validate_every_instances and ((nr_instances % self.validate_every_instances) == 0)):
                     # evaluate on validation set
                     last_epoch = epoch
-                    (loss_val, acc_val, correct, total) = self.evaluate(self.valset, train_mode=False)
+                    #print("evaluating")
+                    #print(self.valset)
+                    if self.config['elmo']:
+                        batches, total_size = self.split_batch(self.valset)
+                        loss_val = 0
+                        acc_val = 0
+                        correct = 0
+                        
+                        for val_batch in batches:
+                            (current_loss_val, current_acc_val, current_correct, current_total) = self.evaluate(val_batch, train_mode=False)
+                            #print(current_loss_val, current_acc_val, current_correct, current_total)
+                            loss_val += current_loss_val/total_size
+                            acc_val += (current_acc_val*current_total)/total_size
+                            correct += current_correct
+                            total += current_total
+                    else:
+                        (loss_val, acc_val, correct, total) = self.evaluate(self.valset, train_mode=False)
                     logger.info("Epoch=%s, VALIDATION: loss=%s acc=%s" %
                                 (epoch, f(loss_val), f(acc_val)))
                     validation_losses.append(float(loss_val))
@@ -675,10 +713,12 @@ class ModelWrapperDefault(ModelWrapper):
                                         (best_acc,))
                     # if the current validation accuracy is better than what we had so far, save
                     # the model
-                    if acc_val > best_acc:
-                        best_acc = acc_val
+                        if (acc_val > best_acc) and (epoch > 1):
+                            best_acc = acc_val
+                            saved_model_name = self.save_model(filenameprefix)
+                            self.best_model_saved = True
+                    else:
                         saved_model_name = self.save_model(filenameprefix)
-                        self.best_model_saved = True
 
                 if self.stopfile and os.path.exists(self.stopfile):
                     logger.info("Stop file found, removing and terminating training, best validation acc: %s" %
@@ -781,3 +821,48 @@ class ModelWrapperDefault(ModelWrapper):
         repr = "ModelWrapperSimple(config=%r, cuda=%s):\nmodule=%s\noptimizer=%s\nlossfun=%s" % \
              (self.config, self._enable_cuda, self.module, self.optimizer, self.lossfunction)
         return repr
+
+
+    def split_batch(self, dataset, batch_size=32):
+
+        batches = []
+        x = dataset[0]
+        y = dataset[1]
+        total_size = len(x[0])
+        s = 0
+        e = batch_size
+
+        while (s < total_size):
+            all_b_x = []
+            for item in x:
+                b_x = item[s:e]
+                all_b_x.append(b_x)
+            b_y = y[s:e]
+            batches.append([all_b_x, b_y])
+            s += batch_size
+            e += batch_size
+        return batches, total_size
+
+    def split_batch_x(self, dataset, batch_size=8):
+        batches = []
+        x = dataset
+        total_size = len(x)
+        s = 0
+        e = batch_size
+
+        while (s < total_size):
+            b_x = x[s:e]
+            batches.append(b_x)
+            s += batch_size
+            e += batch_size
+        return batches
+
+
+
+
+
+        
+
+
+
+

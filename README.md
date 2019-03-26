@@ -57,3 +57,115 @@ Accuracy: 81.014
 
 Five run valila CNN with glove 100 dim twitter embed
 Accuracy: 82.51
+
+Elmo + CNN (see below for model)
+First run: Accuracy: 85.95, Cohen's Kappa: 62.92, Pi's Kapaa: 62.90
+
+
+
+ELMO + CNN Model:
+module=TextClassELMO_CNNsingle(
+  (elmo): Elmo(
+    (_elmo_lstm): _ElmoBiLm(
+      (_token_embedder): _ElmoCharacterEncoder(
+        (char_conv_0): Conv1d(16, 32, kernel_size=(1,), stride=(1,))
+        (char_conv_1): Conv1d(16, 32, kernel_size=(2,), stride=(1,))
+        (char_conv_2): Conv1d(16, 64, kernel_size=(3,), stride=(1,))
+        (char_conv_3): Conv1d(16, 128, kernel_size=(4,), stride=(1,))
+        (char_conv_4): Conv1d(16, 256, kernel_size=(5,), stride=(1,))
+        (char_conv_5): Conv1d(16, 512, kernel_size=(6,), stride=(1,))
+        (char_conv_6): Conv1d(16, 1024, kernel_size=(7,), stride=(1,))
+        (_highways): Highway(
+          (_layers): ModuleList(
+            (0): Linear(in_features=2048, out_features=4096, bias=True)
+            (1): Linear(in_features=2048, out_features=4096, bias=True)
+          )
+        )
+        (_projection): Linear(in_features=2048, out_features=512, bias=True)
+      )
+      (_elmo_lstm): ElmoLstm(
+        (forward_layer_0): LstmCellWithProjection(
+          (input_linearity): Linear(in_features=512, out_features=16384, bias=False)
+          (state_linearity): Linear(in_features=512, out_features=16384, bias=True)
+          (state_projection): Linear(in_features=4096, out_features=512, bias=False)
+        )
+        (backward_layer_0): LstmCellWithProjection(
+          (input_linearity): Linear(in_features=512, out_features=16384, bias=False)
+          (state_linearity): Linear(in_features=512, out_features=16384, bias=True)
+          (state_projection): Linear(in_features=4096, out_features=512, bias=False)
+        )
+        (forward_layer_1): LstmCellWithProjection(
+          (input_linearity): Linear(in_features=512, out_features=16384, bias=False)
+          (state_linearity): Linear(in_features=512, out_features=16384, bias=True)
+          (state_projection): Linear(in_features=4096, out_features=512, bias=False)
+        )
+        (backward_layer_1): LstmCellWithProjection(
+          (input_linearity): Linear(in_features=512, out_features=16384, bias=False)
+          (state_linearity): Linear(in_features=512, out_features=16384, bias=True)
+          (state_projection): Linear(in_features=4096, out_features=512, bias=False)
+        )
+      )
+    )
+    (_dropout): Dropout(p=0.5)
+    (scalar_mix_0): ScalarMix(
+      (scalar_parameters): ParameterList(
+          (0): Parameter containing: [torch.cuda.FloatTensor of size 1 (GPU 0)]
+          (1): Parameter containing: [torch.cuda.FloatTensor of size 1 (GPU 0)]
+          (2): Parameter containing: [torch.cuda.FloatTensor of size 1 (GPU 0)]
+      )
+    )
+    (scalar_mix_1): ScalarMix(
+      (scalar_parameters): ParameterList(
+          (0): Parameter containing: [torch.cuda.FloatTensor of size 1 (GPU 0)]
+          (1): Parameter containing: [torch.cuda.FloatTensor of size 1 (GPU 0)]
+          (2): Parameter containing: [torch.cuda.FloatTensor of size 1 (GPU 0)]
+      )
+    )
+  )
+  (layers): Sequential(
+    (layer_cnns): LayerCNN(
+      (layers): Sequential(
+        (transpose): Transpose4CNN()
+        (CNNs): ListModule(
+          (modulelist): ModuleList(
+            (0): Sequential(
+              (conv1d_K3): Conv1d(2048, 100, kernel_size=(3,), stride=(1,), padding=(1,))
+              (batchnorm1d_K3): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+              (nonlin_K3): ReLU()
+              (maxpool_K3): MaxFrom1d()
+              (dropout_K3): Dropout(p=0.6)
+            )
+            (1): Sequential(
+              (conv1d_K4): Conv1d(2048, 100, kernel_size=(4,), stride=(1,), padding=(2,))
+              (batchnorm1d_K4): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+              (nonlin_K4): ReLU()
+              (maxpool_K4): MaxFrom1d()
+              (dropout_K4): Dropout(p=0.6)
+            )
+            (2): Sequential(
+              (conv1d_K5): Conv1d(2048, 100, kernel_size=(5,), stride=(1,), padding=(2,))
+              (batchnorm1d_K5): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+              (nonlin_K5): ReLU()
+              (maxpool_K5): MaxFrom1d()
+              (dropout_K5): Dropout(p=0.6)
+            )
+          )
+        )
+        (concat): Concat()
+      )
+    )
+    (linear): Linear(in_features=300, out_features=2, bias=True)
+    (logsoftmax): LogSoftmax()
+  )
+)
+optimizer=Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    eps: 1e-08
+    lr: 0.015
+    weight_decay: 0
+)
+lossfun=NLLLoss()
+
+

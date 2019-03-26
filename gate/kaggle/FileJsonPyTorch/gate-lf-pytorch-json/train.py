@@ -55,8 +55,10 @@ def main(sysargs):
     parser.add_argument("--valfile", type=str, default=None, help="Use this file for validation")
     parser.add_argument("--version", action='version', version=gatelfpytorchjson.__version__)
     parser.add_argument("--debug", action='store_true', help="Set logger to DEBUG and show more information")
+    parser.add_argument("--elmo", help="Use elmo for embedding, path to elmo model (original5.5b)")
     parser.add_argument("metafile", help="Path to metafile (REQUIRED)")
     parser.add_argument("modelname", help="Model path prefix (full path and beginning of model file name) (REQUIRED)")
+
 
     args = parser.parse_args(args=sysargs[1:])
 

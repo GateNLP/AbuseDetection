@@ -422,7 +422,7 @@ class Dataset(object):
             for instance in self.instances_converted(train=False, convert=True, file=infile):
                 print(json.dumps(instance), file=out)
 
-    def validation_set_orig(self):
+    def validation_set_orig(self, as_batch=False):
         """Read and return the validation set rows in original format. For this to work, the split()
         method must have been run and either convert have been False or convert True and keep_orig True."""
         if not self.have_orig_split:
@@ -432,6 +432,8 @@ class Dataset(object):
         with open(validationsetfile, "rt", encoding="utf-8") as inp:
             for line in inp:
                 valset.append(json.loads(line))
+        if as_batch:
+            valset = self.reshape_batch(valset, as_numpy=False, from_original=True)
         return valset
 
     def validation_set_converted(self, as_numpy=False, as_batch=False):

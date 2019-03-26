@@ -337,7 +337,7 @@
                 </entry>
                 <entry>
                   <string>algorithmParameters</string>
-                  <string>--module TextClassResiduleBiLstmCnnSingle --es_metric accuracy --es_patience 15</string>
+                  <string>--module TextClassELMO_CNNsingle --elmo /export/data/models/elmo/ --cuda True --es_metric accuracy</string>
                 </entry>
                 <entry>
                   <string>featureSpecURL</string>
