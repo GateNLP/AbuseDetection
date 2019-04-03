@@ -64,11 +64,12 @@ F1: 0.51
 
 Some low recall words were removed, such as "kill", in the version used for the ITV work. These words for removal were selected based on the Kaggle training data and discussed as a group, since we didn't uncritically remove words that defied common sense and didn't appear often enough in the Kaggle data to really give us a reading. I evaluated this on Johann's new version of the data, which is cleaned up a little I believe, used text spans from the test data and marked any text containing and "AbuseLookup" as 1 for "insult". I did this manually in the GATE GUI. The scripts are in my personal files but are trivial.
 
-Accuracy: 0.80
-Cohen’s Kappa: 0.41
-Precision: 0.70
-Recall: 0.42
-F1: 0.52
+Accuracy: 0.8009    
+Cohen’s Kappa: 0.4074
+Scott's Pi: 0.3973
+Precision: 0.7015    
+Recall: 0.4170    
+F1: 0.5231    
 
 ### Learning Framework
 Trained on gate-train, Tested on gate-test_with_solutions
