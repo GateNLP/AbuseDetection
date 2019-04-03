@@ -33,14 +33,42 @@ Class 1: 1077
 
 ### Gazetteer
 
+#### ICWSM result
+
+Since the approach was done from a word list found online without looking at any data, both training and test set were evaluated in [the extended paper on arXiv](https://arxiv.org/pdf/1804.01498.pdf):
+
+TRAINING:  
+Accuracy: 0.78  
+Cohen’s Kappa: 0.39   
+Precision: 0.62  
+Recall: 0.45  
+F1: 0.53  
+
+TEST:  
+Accuracy: 0.78  
+Cohen’s Kappa:  0.36  
+Precision: 0.60  
+Recall: 0.43  
+F1: 0.50  
+
 [ICWSM paper](https://www.aaai.org/ocs/index.php/ICWSM/ICWSM18/paper/viewFile/17861/17060)  
-Trained on "gold-standard-abusive-tweets" and tested on "gold-standard-abusive-tweets-2":
+Training and test combined, I believe:
 
 Accuracy: 0.78   
-Cohen’s Kappa: 0.37  
-Precision: 0.61  
-Recall: 0.44  
-F1: 0.51
+Cohen’s Kappa: 0.37   
+Precision: 0.61   
+Recall: 0.44   
+F1: 0.51  
+
+#### ITV result
+
+Some low recall words were removed, such as "kill", in the version used for the ITV work. These words for removal were selected based on the Kaggle training data and discussed as a group, since we didn't uncritically remove words that defied common sense and didn't appear often enough in the Kaggle data to really give us a reading. I evaluated this on Johann's new version of the data, which is cleaned up a little I believe, used text spans from the test data and marked any text containing and "AbuseLookup" as 1 for "insult". I did this manually in the GATE GUI. The scripts are in my personal files but are trivial.
+
+Accuracy: 0.80
+Cohen’s Kappa: 0.41
+Precision: 0.70
+Recall: 0.42
+F1: 0.52
 
 ### Learning Framework
 Trained on gate-train, Tested on gate-test_with_solutions
