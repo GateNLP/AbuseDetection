@@ -72,6 +72,23 @@ Recall: 0.4170
 F1: 0.5231    
 
 ### Learning Framework
+#### Kim's CNN
+filter size 3,4,5
+batchnorm = 0.2
+dropout  = 0.6
+pretrained glove 100 dim twitter embed
+Accuracy: 0.8243
+Roc_auc_score:  0.8662218027622326
+Pos Recall: 0.4603
+Pos Precision: 0.7780
+Pos F1: 0.5784
+Neg Recall: 0.9534
+Neg Precision: 0.8327
+Neg F1: 0.8890
+
+
+
+
 Trained on gate-train, Tested on gate-test_with_solutions
 
 Accuracy:	0.8058
